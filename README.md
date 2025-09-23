@@ -1,7 +1,32 @@
-
 ---
 - Video Explanation: [FastAPI lab](https://www.youtube.com/watch?v=KReburHqRIQ&list=PLcS4TrUUc53LeKBIyXAaERFKBJ3dvc9GZ&index=4)
 - Blog: [FastAPI Lab-1](https://www.mlwithramin.com/blog/fastapi-lab1)
+
+---
+
+## Lab Modifications
+
+**This implementation includes the following custom modifications to demonstrate understanding of MLOps concepts:**
+
+### 1. Model Change: Decision Tree → Random Forest
+- **Original**: Decision Tree Classifier with max_depth=3
+- **Modified**: Random Forest Classifier with n_estimators=100 and random_state=42
+- **Rationale**: Random Forest provides better accuracy and reduced overfitting through ensemble learning
+
+### 2. Dataset Change: Iris → Wine Classification
+- **Original**: Iris dataset (4 features: sepal_length, sepal_width, petal_length, petal_width)
+- **Modified**: Wine dataset (13 features: alcohol, malic_acid, ash, alcalinity_of_ash, magnesium, total_phenols, flavanoids, nonflavanoid_phenols, proanthocyanins, color_intensity, hue, od280_od315_of_diluted_wines, proline)
+- **Classes**: 3 wine types (0, 1, 2) instead of 3 iris species
+- **Rationale**: Wine classification demonstrates ability to work with different domains and higher-dimensional feature spaces
+
+### 3. API Schema Updates
+- Updated Pydantic models from `IrisData` to `WineData` with 13 wine characteristics
+- Modified response model from `IrisResponse` to `WineResponse`
+- Updated endpoint documentation to reflect wine classification
+
+### 4. Model Persistence
+- Changed model filename from `iris_model.pkl` to `wine_model.pkl`
+- Updated all references in training and prediction scripts
 
 ---
 
@@ -12,7 +37,7 @@ In this Lab, we will learn how to expose ML models as APIs using [FastAPI](https
 2. **uvicorn**: Uvicorn is an [Asynchronous Server Gateway Interface - ASGI](https://youtu.be/vKjCkeJGbNk) web server implementation for Python. It is often used to serve FastAPI aplications.
 
 The workflow involves the following steps:
-1. Training a Decision Tree Classifier on Iris Dataset.
+1. Training a Random Forest Classifier on Wine Dataset.
 2. Serving the trained model as an API using FastAPI and uvicorn.
 
 ## Setting up the lab
@@ -28,7 +53,7 @@ mlops_labs
     ├── assets/
     ├── fastapi_lab1_env/
     ├── model/
-    │   └── iris_model.pkl
+    │   └── wine_model.pkl
     ├── src/
     │   ├── __init__.py
     │   ├── data.py
@@ -44,17 +69,17 @@ Note:
 
 ## Running the Lab
 
-1. First step is to train a Decision Tree Classifier(Although you have **`model/iris_model.pkl`** when you cloned from the repo, let's create a new model). To do this, move into **src/** folder with
+1. First step is to train a Random Forest Classifier. To do this, move into **src/** folder with
     ```bash
     cd src
     ```
-2. To train the Decision Tree Classifier, run:
+2. To train the Random Forest Classifier, run:
     ```bash
     python train.py
     ```
 3. To serve the trained model as an API, run:
     ```bash
-    uvicorn app:main --reload
+    uvicorn main:app --reload
     ```
 4. Testing endpoints - to view the documentation of your api model you can use [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) (or) [http://localhost:8000/docs](http://localhost:8000/docs) after you run you run your FastAPI app.
     
@@ -66,13 +91,33 @@ You can also test out the results of your endpoints by interacting with them. Cl
 
 - You can also use other tools like [Postman](https://www.postman.com/) for API testing.
 
+### Sample Wine Data for Testing
+
+```json
+{
+  "alcohol": 13.20,
+  "malic_acid": 1.78,
+  "ash": 2.14,
+  "alcalinity_of_ash": 11.2,
+  "magnesium": 100,
+  "total_phenols": 2.65,
+  "flavanoids": 2.76,
+  "nonflavanoid_phenols": 0.26,
+  "proanthocyanins": 1.28,
+  "color_intensity": 4.38,
+  "hue": 1.05,
+  "od280_od315_of_diluted_wines": 3.40,
+  "proline": 1050
+}
+```
+
 ### FastAPI Syntax
 
 - The instance of FASTAPI class can be defined as:
     ```bash
     app = FastAPI()
      ```
-- When you run a FastAPI application, you often pass this app instance to an ASGI server uvicorn. The server then uses the app instance to handle incoming web requests and send responses based on the routes and logic you’ve defined in your FastAPI application.
+- When you run a FastAPI application, you often pass this app instance to an ASGI server uvicorn. The server then uses the app instance to handle incoming web requests and send responses based on the routes and logic you've defined in your FastAPI application.
 - To run a FastAPI application, run:
     ```
     uvicorn main:app --reload
@@ -87,31 +132,40 @@ You can also test out the results of your endpoints by interacting with them. Cl
 
 ### Data Models in FastAPI
 
-##### 1. IrisData class
+##### 1. WineData class
 
 ```python
-class IrisData(BaseModel):
-    petal_length: float
-    sepal_length:float
-    petal_width:float
-    sepal_width:float
+class WineData(BaseModel):
+    alcohol: float
+    malic_acid: float
+    ash: float
+    alcalinity_of_ash: float
+    magnesium: float
+    total_phenols: float
+    flavanoids: float
+    nonflavanoid_phenols: float
+    proanthocyanins: float
+    color_intensity: float
+    hue: float
+    od280_od315_of_diluted_wines: float
+    proline: float
 ```
 
-The **IrisData** class is a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/) which defines the expected structure of the data for a request body. When you use it as a type annotation for a route operation parameter, FastAPI will perform the following actions:
+The **WineData** class is a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/) which defines the expected structure of the data for a request body. When you use it as a type annotation for a route operation parameter, FastAPI will perform the following actions:
 - **Request Body Reading:** FastAPI will read the request body as JSON.
 - **Data Conversion:** It will convert the corresponding types, if necessary.
 - **Data Validation:** It will validate the data. If the data is invalid, it will return a 422 Unprocessable Entity error response with details about what was incorrect.
 
-#### 2. IrisResponse class
+#### 2. WineResponse class
 
 ```python
-class IrisResponse(BaseModel):
+class WineResponse(BaseModel):
     response:int
 ```
 
-The **IrisResponse** class is another Pydantic model that defines the structure of the response data for an endpoint. When you specify **response_model=IrisResponse** in a route operation, it tells FastAPI to:
-- **Serialize the Output**: Convert the output data to JSON format according to the IrisResponse model.
-- **Document the API**: Include the IrisResponse model in the generated API documentation, so API consumers know what to expect in the response.
+The **WineResponse** class is another Pydantic model that defines the structure of the response data for an endpoint. When you specify **response_model=WineResponse** in a route operation, it tells FastAPI to:
+- **Serialize the Output**: Convert the output data to JSON format according to the WineResponse model.
+- **Document the API**: Include the WineResponse model in the generated API documentation, so API consumers know what to expect in the response.
 
 ---
 
@@ -119,7 +173,7 @@ The **IrisResponse** class is another Pydantic model that defines the structure 
 
 1. **Request Body Reading**: When a client sends a request to a FastAPI endpoint, the request can include a body with data. For routes that expect data (commonly POST, PUT, or PATCH requests), this data is often in JSON format. FastAPI automatically reads the request body by checking the Content-Type header, which should be set to application/json for JSON payloads.
 2. **Data Conversion**: Once the request body is read, FastAPI utilizes Pydantic models to parse the JSON data. Pydantic attempts to construct an instance of the specified model using the data from the request body. During this instantiation, Pydantic converts the JSON data into the proper Python data types as declared in the model.
-    - For instance, if the JSON object has a field like petal_length with a value of "5.1" (a string), and the model expects a float, Pydantic will transform the string into a float. If conversion isn't possible (say, the value was "five point one"), Pydantic will raise a validation error.
+    - For instance, if the JSON object has a field like alcohol with a value of "13.2" (a string), and the model expects a float, Pydantic will transform the string into a float. If conversion isn't possible (say, the value was "thirteen point two"), Pydantic will raise a validation error.
 3. **Data Validation**: Pydantic checks that all required fields are present and that the values are of the correct type, adhering to any constraints defined in the model (such as string length or number range). If the validation passes, the endpoint has a verified Python object to work with. If validation fails (due to missing fields, incorrect types, or constraint violations), FastAPI responds with a 422 Unprocessable Entity status. This response includes a JSON body detailing the validation errors, aiding clients in correcting their request data.
 4. **Error Handling**: Error handling in FastAPI can be effectively managed using the HTTPException class. HTTPException is used to explicitly signal an HTTP error status code and return additional details about the error. When an HTTPException is raised within a route, FastAPI will catch the exception and use its content to form the HTTP response.
 - **Instantiation**: The HTTPException class is instantiated with at least two arguments: status_code and detail. The status_code argument is an integer that represents the HTTP status code (e.g., 404 for Not Found, 400 for Bad Request). The detail argument is a string or any JSON-encodable object that describes the error.
